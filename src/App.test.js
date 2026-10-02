@@ -9,6 +9,7 @@ test('starts with 15 Listeria and removes one when tapped without replacement', 
   render(<App />);
 
   fireEvent.click(screen.getByRole('button', { name: /start game/i }));
+  expect(screen.getByText('Tap the Listeria to clean it up before your problem gets out of hand')).toBeInTheDocument();
   const board = screen.getByRole('group', { name: /10 by 10 Listeria game grid/i });
   expect(board.children).toHaveLength(100);
   expect(screen.getAllByRole('button', { name: /tap a listeria/i })).toHaveLength(15);

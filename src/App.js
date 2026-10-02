@@ -108,7 +108,7 @@ function App() {
 
   const statusMessage = {
     ready: 'Can you get your plant TAG clean?',
-    playing: 'Tap the Listeria! They double every 3 seconds.',
+    playing: 'Tap the Listeria to clean it up before your problem gets out of hand',
     finished: 'Time is up! Want to play again?',
   }[gameState];
 

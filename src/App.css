@@ -1,15 +1,18 @@
 #root {
-  min-height: 100vh;
+  height: 100%;
 }
 
 .game-page {
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  width: 100%;
   box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 36px 20px 22px;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  justify-items: center;
+  gap: clamp(2px, 1vmin, 8px);
+  overflow: hidden;
+  padding: clamp(4px, 1.5vmin, 14px) clamp(6px, 2vw, 20px);
   background:
     radial-gradient(ellipse at 50% 0%, #FFF 0%, #DBF0F0 58%);
   color: #37526C;
@@ -18,10 +21,15 @@
 .game-card {
   position: relative;
   width: min(100%, 660px);
+  height: 100%;
+  min-height: 0;
   box-sizing: border-box;
-  padding: 30px 34px 26px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: clamp(8px, 2.2vmin, 30px) clamp(10px, 3vw, 34px) clamp(8px, 2vmin, 26px);
   border: 1px solid #DBF0F0;
-  border-radius: 28px;
+  border-radius: clamp(12px, 3vmin, 28px);
   background: #FFF;
   box-shadow: 0 24px 70px #37526C;
   text-align: center;
@@ -31,7 +39,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: 48px;
+  flex: 0 0 auto;
+  width: 100%;
+  padding-top: clamp(24px, 7vmin, 48px);
 }
 
 .brand-logo {
@@ -40,6 +50,9 @@
   left: 16px;
   display: block;
   width: 25%;
+  max-height: 9dvh;
+  object-fit: contain;
+  object-position: left top;
   height: auto;
 }
 
@@ -55,7 +68,7 @@
   margin: 0;
   color: #37526C;
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(34px, 9vw, 43px);
+  font-size: clamp(24px, 8vmin, 43px);
   font-weight: 700;
   letter-spacing: -0.055em;
   line-height: 1.1;
@@ -63,9 +76,9 @@
 
 .game-description {
   min-height: 22px;
-  margin: 10px 0 22px;
+  margin: clamp(4px, 1.5vmin, 10px) 0 clamp(6px, 2vmin, 22px);
   color: #37526C;
-  font-size: 14px;
+  font-size: clamp(10px, 2.6vmin, 14px);
 }
 
 .scoreboard {
@@ -75,8 +88,9 @@
   gap: 16px;
   width: 100%;
   box-sizing: border-box;
-  margin-bottom: 23px;
-  padding: 13px 20px;
+  flex: 0 0 auto;
+  margin-bottom: clamp(5px, 1.8vmin, 23px);
+  padding: clamp(5px, 1.8vmin, 13px) clamp(8px, 2.6vmin, 20px);
   border-radius: 16px;
   background: #FAFAFA;
 }
@@ -99,7 +113,7 @@
 
 .stat strong {
   color: #37526C;
-  font-size: 25px;
+  font-size: clamp(16px, 4vmin, 25px);
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
 }
@@ -113,10 +127,16 @@
 .grid-board {
   display: grid;
   grid-template-columns: repeat(10, minmax(0, 1fr));
-  gap: clamp(3px, 1vw, 8px);
-  width: min(100%, 560px);
-  margin: 0 auto 24px;
-  padding: clamp(7px, 2vw, 13px);
+  grid-template-rows: repeat(10, minmax(0, 1fr));
+  align-self: center;
+  flex: 1 1 0;
+  min-height: 0;
+  width: auto;
+  max-width: 100%;
+  aspect-ratio: 1;
+  gap: clamp(2px, 1vmin, 8px);
+  margin: 0 auto clamp(5px, 1.8vmin, 24px);
+  padding: clamp(4px, 1.6vmin, 13px);
   border: 1px solid #3DA9AA;
   border-radius: 18px;
   background: #DBF0F0;
@@ -125,7 +145,8 @@
 .grid-cell {
   position: relative;
   display: grid;
-  aspect-ratio: 1;
+  min-width: 0;
+  min-height: 0;
   place-items: center;
   overflow: hidden;
   padding: 0;
@@ -168,14 +189,15 @@
 
 .game-button {
   width: 100%;
-  min-height: 52px;
+  min-height: clamp(36px, 7vmin, 52px);
+  flex: 0 0 auto;
   border: 0;
   border-radius: 15px;
   background: #3DA9AA;
   color: #FFF;
   cursor: pointer;
   font: inherit;
-  font-size: 15px;
+  font-size: clamp(12px, 2.5vmin, 15px);
   font-weight: 750;
   transition: background 140ms ease, transform 140ms ease;
 }
@@ -194,16 +216,17 @@
 }
 
 .how-to-play {
-  margin: 17px 0 0;
+  flex: 0 0 auto;
+  margin: clamp(5px, 1.8vmin, 17px) 0 0;
   color: #37526C;
-  font-size: 11px;
+  font-size: clamp(9px, 1.8vmin, 11px);
   line-height: 1.5;
 }
 
 .footer-note {
-  margin: 18px 0 0;
+  margin: 0;
   color: #37526C;
-  font-size: 11px;
+  font-size: clamp(9px, 1.8vmin, 11px);
 }
 
 .modal-backdrop {
@@ -283,21 +306,14 @@
 }
 
 @media (max-width: 420px) {
-  .game-page {
-    padding: 20px 14px;
-  }
-
-  .game-header {
-    padding-top: 48px;
-  }
-
   .game-card {
-    padding: 24px 22px 22px;
+    padding-right: clamp(10px, 5vw, 22px);
+    padding-left: clamp(10px, 5vw, 22px);
   }
 
   .grid-board {
     gap: 3px;
-    padding: 7px;
+    padding: clamp(4px, 1.5vmin, 7px);
   }
 }
 
