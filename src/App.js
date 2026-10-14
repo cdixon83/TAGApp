@@ -2,11 +2,18 @@ import { useEffect, useState } from 'react';
 import './App.css';
 
 const GAME_LENGTH = 30;
-const LISTERIA_DOUBLING_INTERVAL = 3000;
+const LISTERIA_GROWTH_INTERVAL = 3000;
+const LISTERIA_GROWTH_AMOUNT = 15;
 const INITIAL_LISTERIA_COUNT = 15;
 const GRID_SIZE = 10;
 const CELL_COUNT = GRID_SIZE * GRID_SIZE;
-const HELP_PROMPT_THRESHOLD = Math.ceil(CELL_COUNT * 0.95);
+const HELP_PROMPT_THRESHOLDS = [
+  Math.ceil(CELL_COUNT * 0.5),
+  Math.ceil(CELL_COUNT * 0.75),
+];
+const GAMES = [
+  { id: 'listeria-dash', name: 'Listeria Dash' },
+];
 
 function getRandomEmptyCells(count, occupiedCells = []) {
   const occupied = new Set(occupiedCells);
@@ -22,17 +29,20 @@ function getRandomEmptyCells(count, occupiedCells = []) {
 }
 
 function App() {
+  const [selectedGame, setSelectedGame] = useState(null);
   const [gameState, setGameState] = useState('ready');
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(GAME_LENGTH);
   const [listeriaCells, setListeriaCells] = useState([]);
   const [growthStopped, setGrowthStopped] = useState(false);
   const [tagHelpUsed, setTagHelpUsed] = useState(false);
-  const [helpPromptDismissed, setHelpPromptDismissed] = useState(false);
+  const [helpPromptStep, setHelpPromptStep] = useState(0);
   const [cleanPromptDismissed, setCleanPromptDismissed] = useState(false);
+  const showHelpPrompt = gameState === 'playing'
+    && listeriaCells.length === HELP_PROMPT_THRESHOLDS[helpPromptStep];
 
   useEffect(() => {
-    if (gameState !== 'playing') {
+    if (gameState !== 'playing' || showHelpPrompt) {
       return undefined;
     }
 
@@ -41,26 +51,35 @@ function App() {
     }, 1000);
 
     return () => window.clearInterval(timer);
-  }, [gameState]);
+  }, [gameState, showHelpPrompt]);
 
   useEffect(() => {
-    if (gameState !== 'playing' || growthStopped) {
+    if (gameState !== 'playing' || growthStopped || showHelpPrompt) {
       return undefined;
     }
 
     const growthTimer = window.setInterval(() => {
       setListeriaCells((currentCells) => {
-        const newCellCount = Math.min(currentCells.length, CELL_COUNT - currentCells.length);
+        if (currentCells.length === 0) {
+          return currentCells;
+        }
+
+        const nextCellCount = Math.min(currentCells.length + LISTERIA_GROWTH_AMOUNT, CELL_COUNT);
+        const nextHelpThreshold = HELP_PROMPT_THRESHOLDS[helpPromptStep];
+        const shouldPauseAtHelpThreshold = nextHelpThreshold !== undefined
+          && currentCells.length < nextHelpThreshold
+          && nextCellCount > nextHelpThreshold;
+        const targetCount = shouldPauseAtHelpThreshold ? nextHelpThreshold : nextCellCount;
+        const newCellCount = targetCount - currentCells.length;
         return [...currentCells, ...getRandomEmptyCells(newCellCount, currentCells)];
       });
-    }, LISTERIA_DOUBLING_INTERVAL);
+    }, LISTERIA_GROWTH_INTERVAL);
 
     return () => window.clearInterval(growthTimer);
-  }, [gameState, growthStopped]);
+  }, [gameState, growthStopped, showHelpPrompt, helpPromptStep]);
 
   useEffect(() => {
     if (gameState === 'playing' && timeLeft === 0) {
-      setListeriaCells([]);
       setGameState('finished');
     }
   }, [gameState, timeLeft]);
@@ -71,13 +90,13 @@ function App() {
     setListeriaCells(getRandomEmptyCells(INITIAL_LISTERIA_COUNT));
     setGrowthStopped(false);
     setTagHelpUsed(false);
-    setHelpPromptDismissed(false);
+    setHelpPromptStep(0);
     setCleanPromptDismissed(false);
     setGameState('playing');
   }
 
   function tapListeria(cell) {
-    if (gameState !== 'playing' || !listeriaCells.includes(cell)) {
+    if (gameState !== 'playing' || showHelpPrompt || !listeriaCells.includes(cell)) {
       return;
     }
 
@@ -86,22 +105,20 @@ function App() {
   }
 
   function askTagForHelp() {
-    setListeriaCells((currentCells) => currentCells.slice(0, 1));
+    setListeriaCells((currentCells) => currentCells.slice(0, Math.ceil(currentCells.length / 2)));
     setGrowthStopped(true);
     setTagHelpUsed(true);
+    setHelpPromptStep(HELP_PROMPT_THRESHOLDS.length);
   }
 
   function dismissHelpPrompt() {
-    setHelpPromptDismissed(true);
+    setHelpPromptStep((step) => step + 1);
   }
 
   function dismissCleanPrompt() {
     setCleanPromptDismissed(true);
   }
 
-  const showHelpPrompt = gameState === 'playing'
-    && listeriaCells.length >= HELP_PROMPT_THRESHOLD
-    && !helpPromptDismissed;
   const showCleanPrompt = gameState === 'playing'
     && listeriaCells.length === 0
     && !cleanPromptDismissed;
@@ -114,51 +131,87 @@ function App() {
 
   return (
     <main className="game-page">
-      <section className="game-card" aria-labelledby="game-title">
-        <header className="game-header">
-          <img className="brand-logo" src="/tag-logo.jpeg" alt="The Acheson Group (TAG)" />
-          <p className="eyebrow">THE MICROBE GAME</p>
-          <h1 id="game-title">Listeria Dash</h1>
-          <p className="game-description">{statusMessage}</p>
-        </header>
-
-        <div className="scoreboard" role="group" aria-label="Listeria statistics">
-          <div className="stat">
-            <span className="stat-label">Listeria Detected</span>
-            <strong aria-live="polite">{score}</strong>
-          </div>
-          <div className="stat-divider" aria-hidden="true" />
-          <div className="stat">
-            <span className="stat-label">Listeria Contamination</span>
-            <strong aria-live="polite">{listeriaCells.length}</strong>
-          </div>
-        </div>
-
-        <div className="grid-board" role="group" aria-label="10 by 10 Listeria game grid">
-          {Array.from({ length: CELL_COUNT }, (_, cell) => {
-            const hasListeria = gameState === 'playing' && listeriaCells.includes(cell);
-            return (
+      {selectedGame === null ? (
+        <section className="game-card game-picker" aria-labelledby="game-picker-title">
+          <header className="game-header">
+            <img className="brand-logo" src="/tag-logo.jpeg" alt="The Acheson Group (TAG)" />
+            <p className="eyebrow">THE ACHESON GROUP</p>
+            <h1 id="game-picker-title">Pick a TAG Game</h1>
+            <p className="game-description">Choose a game to play.</p>
+          </header>
+          <div className="game-list" aria-label="Available games">
+            {GAMES.map((game) => (
               <button
-                className={`grid-cell${hasListeria ? ' cell-active' : ''}`}
-                key={cell}
+                className="game-button"
+                key={game.id}
                 type="button"
-                onClick={() => tapListeria(cell)}
-                aria-label={hasListeria ? 'Tap a Listeria' : `Empty cell ${cell + 1}`}
+                onClick={() => setSelectedGame(game.id)}
               >
-                {hasListeria && (
-                  <img className="listeria" src="/listeria.svg" alt="" />
-                )}
+                {game.name}
+                <span aria-hidden="true"> ↗</span>
               </button>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        </section>
+      ) : (
+        <section className="game-card" aria-labelledby="game-title">
+          <button className="back-to-games" type="button" onClick={() => setSelectedGame(null)}>
+            ← All TAG Games
+          </button>
+          <header className="game-header">
+            <img className="brand-logo" src="/tag-logo.jpeg" alt="The Acheson Group (TAG)" />
+            <p className="eyebrow">THE MICROBE GAME</p>
+            <h1 id="game-title">Listeria Dash</h1>
+            <p className="game-description">{statusMessage}</p>
+          </header>
 
-        <button className="game-button" type="button" onClick={startGame}>
-          {gameState === 'ready' ? 'Start game' : gameState === 'playing' ? 'Restart game' : 'Play again'}
-          <span aria-hidden="true"> ↗</span>
-        </button>
-        <p className="how-to-play">Tap the cartoon Listeria to move it from your equipment. Can you get your plant clean in time?</p>
-      </section>
+          <div className="scoreboard" role="group" aria-label="Listeria statistics">
+            <div className="stat">
+              <span className="stat-label">Listeria Detected</span>
+              <strong aria-live="polite">{score}</strong>
+            </div>
+            <div className="stat-divider" aria-hidden="true" />
+            <div className="stat">
+              <span className="stat-label">Listeria Contamination</span>
+              <strong aria-live="polite">{listeriaCells.length}</strong>
+            </div>
+          </div>
+
+          <div className="grid-board" role="group" aria-label="10 by 10 Listeria game grid">
+            {Array.from({ length: CELL_COUNT }, (_, cell) => {
+              const hasListeria = listeriaCells.includes(cell);
+              return (
+                <button
+                  className={`grid-cell${hasListeria ? ' cell-active' : ''}`}
+                  key={cell}
+                  type="button"
+                  onClick={() => tapListeria(cell)}
+                  aria-label={hasListeria
+                    ? gameState === 'playing' ? 'Tap a Listeria' : 'Listeria'
+                    : `Empty cell ${cell + 1}`}
+                  disabled={gameState !== 'playing' || showHelpPrompt}
+                >
+                  {hasListeria && (
+                    <img className="listeria" src="/listeria.svg" alt="" />
+                  )}
+                </button>
+              );
+            })}
+            {gameState === 'finished' && listeriaCells.length > 0 && (
+              <div className="game-over-overlay" role="status">
+                <strong>Game Over</strong>
+                <span>Your plant has been shut down</span>
+              </div>
+            )}
+          </div>
+
+          <button className="game-button" type="button" onClick={startGame}>
+            {gameState === 'ready' ? 'Start game' : gameState === 'playing' ? 'Restart game' : 'Play again'}
+            <span aria-hidden="true"> ↗</span>
+          </button>
+          <p className="how-to-play">Tap the cartoon Listeria to move it from your equipment. Can you get your plant clean in time?</p>
+        </section>
+      )}
       <p className="footer-note">A little microbe hunt, one tap at a time.</p>
       {showHelpPrompt && (
         <div className="modal-backdrop help-backdrop">
